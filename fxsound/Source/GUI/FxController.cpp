@@ -188,14 +188,14 @@ FxController::FxController() : message_window_(L"FxSoundHotkeys", (WNDPROC) even
 
 	device_specific_preset_ = settings_.getBool("device_specific_preset");
 
-	String loaded_settings_string = settings_.getString("device_preset_map_");
+	String loaded_settings_string = settings_.getString("device_preset_map");
 
 	auto parsed_device_preset_map = JSON::parse(loaded_settings_string);
 	String ad = JSON::toString(parsed_device_preset_map);
 
 	device_preset_map_ = parsed_device_preset_map.getDynamicObject()
-		? DynamicObject(*parsed_device_preset_map.getDynamicObject()->clone().get())
-		: DynamicObject();
+		? parsed_device_preset_map.getDynamicObject()
+		: new juce::DynamicObject();
 
 
     output_device_id_ = settings_.getString("output_device_id");
@@ -359,17 +359,17 @@ void FxController::init(FxMainWindow* main_window, FxSystemTrayView* system_tray
 		bool device_specific_preset = settings_.getBool("device_specific_preset");
 		if (device_specific_preset)
 		{
-			String loaded_settings_string = settings_.getString("device_preset_map_");
+			String loaded_settings_string = settings_.getString("device_preset_map");
 
-			auto parsed_device_preset_map = JSON::fromString(settings_.getString("device_preset_map_"));
+			auto parsed_device_preset_map = JSON::fromString(settings_.getString("device_preset_map"));
 
-			device_preset_map_ = parsed_device_preset_map.getDynamicObject() != nullptr
-				? DynamicObject(*parsed_device_preset_map.getDynamicObject()->clone().get())
-				: DynamicObject();
 
-			if (device_preset_map_.hasProperty(output_device_id_))
+			auto* obj = parsed_device_preset_map.getDynamicObject();
+			device_preset_map_ = obj ? obj : new juce::DynamicObject();
+
+			if (device_preset_map_->hasProperty(output_device_id_))
 			{
-				preset_name = device_preset_map_.getProperty(output_device_id_);
+				preset_name = device_preset_map_->getProperty(output_device_id_);
 			}
 		}
 
@@ -1674,21 +1674,24 @@ void FxController::setDeviceSpecificPreset(bool status)
 
 String FxController::getDevicePreset(const String& device_id)
 {
-	return device_preset_map_.getProperty(device_id);
+	return device_preset_map_->getProperty(device_id);
 }
 
 void FxController::setDevicePreset(const String& device_id, const String& preset_id)
 {
 	if (device_id == "")
 		return;
-	device_preset_map_.setProperty(device_id, preset_id);
-	settings_.setString("device_preset_map", JSON::toString(device_preset_map_.clone().get()));
+	device_preset_map_->setProperty(device_id, preset_id);
+
+	juce::String jsonString = JSON::toString(device_preset_map_.getObject());
+	settings_.setString("device_preset_map", jsonString);
 }
 
 void FxController::removeDevicePreset(const String& device_id)
 {
-	device_preset_map_.removeProperty(device_id);
-	settings_.setString("device_preset_map", JSON::toString(device_preset_map_.clone().get()));
+	device_preset_map_->removeProperty(device_id);
+	juce::String jsonString = JSON::toString(device_preset_map_.getObject());
+	settings_.setString("device_preset_map", jsonString);
 }
 
 String FxController::getLanguage() const

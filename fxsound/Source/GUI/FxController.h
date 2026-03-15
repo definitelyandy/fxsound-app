@@ -216,7 +216,7 @@ private:
 	bool output_changed_;
     bool playback_device_available_;
 	bool device_specific_preset_;
-	DynamicObject device_preset_map_;
+	juce::DynamicObject::Ptr device_preset_map_ = new juce::DynamicObject();
 	String output_device_id_;
 	String selected_device_id_; // represents fxview selection
     String output_device_name_;
